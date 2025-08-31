@@ -3,150 +3,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محادثة صوتية مع AI</title>
+    <title>مساعد صوتي ذكي</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
         body {
-            background: #111;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
-            text-align: center;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
             padding: 30px;
-            font-family: Arial, sans-serif;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .subtitle {
+            color: #a0a0c0;
+            font-size: 1.1rem;
+        }
+        
+        .mic-container {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
         }
         
         #recordBtn {
-            background: #4CAF50;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
             border: none;
             color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 20px 2px;
+            font-size: 2.5rem;
             cursor: pointer;
-            border-radius: 50px;
-            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        #recordBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.5);
         }
         
         #recordBtn.recording {
-            background: #f44336;
+            background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
             animation: pulse 1.5s infinite;
-        }
-        
-        #status {
-            margin: 15px 0;
-            min-height: 24px;
+            box-shadow: 0 5px 15px rgba(247, 37, 133, 0.3);
         }
         
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+        
+        .status {
+            text-align: center;
+            min-height: 60px;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .transcript {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            min-height: 80px;
+        }
+        
+        .transcript h3 {
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+        
+        #userText {
+            color: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .audio-container {
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        #replyAudio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        
+        .audio-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+            font-weight: 600;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+        
+        .instructions ul {
+            padding-right: 20px;
+            color: #a0a0c0;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .error {
+            color: #f72585;
+            background: rgba(247, 37, 133, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #a0a0c0;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            #recordBtn {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-
-    <h2>🎙️ مساعد صوتي مباشر</h2>
-    <button id="recordBtn">🎤 اضغط للتكلم</button>
-    <div id="status"></div>
-    <audio id="replyAudio" controls style="margin-top: 20px; width: 300px;"></audio>
+    <div class="container">
+        <header>
+            <h1>🎙️ مساعد صوتي ذكي</h1>
+            <p class="subtitle">تحدث مع الذكاء الاصطناعي واستمع إلى ردوده</p>
+        </header>
+        
+        <div class="mic-container">
+            <button id="recordBtn">🎤</button>
+        </div>
+        
+        <div class="status" id="status">انقر على زر الميكروفون لبدء المحادثة</div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="transcript">
+            <h3>الكلام الذي تم التعرف عليه:</h3>
+            <div id="userText">-</div>
+        </div>
+        
+        <div class="audio-container">
+            <span class="audio-label">رد المساعد الصوتي:</span>
+            <audio id="replyAudio" controls></audio>
+        </div>
+        
+        <div class="instructions">
+            <h3>كيفية الاستخدام:</h3>
+            <ul>
+                <li>انقر على زر الميكروفون للتحدث</li>
+                <li>انتظر حتى يتم التعرف على كلامك</li>
+                <li>استمع إلى رد المساعد الصوتي</li>
+                <li>يمكنك إعادة التشغيل أو التوقف في أي وقت</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        تم التطوير باستخدام تقنية التعرف على الصوت والذكاء الاصطناعي
+    </footer>
 
     <script>
-        let recognition;
+        // عناصر DOM
         const recordBtn = document.getElementById("recordBtn");
         const statusDiv = document.getElementById("status");
+        const errorDiv = document.getElementById("error");
+        const userText = document.getElementById("userText");
         const replyAudio = document.getElementById("replyAudio");
         
-        // التحقق من دعم التعرف على الصوت
-        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        // متغيرات التطبيق
+        let recognition;
+        let isRecording = false;
+        
+        // تهيئة التعرف على الصوت
+        function initSpeechRecognition() {
+            // التحقق من دعم المتصفح
+            if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+                showError("المتصفح الخاص بك لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge");
+                recordBtn.disabled = true;
+                return;
+            }
+            
+            // إنشاء كائن التعرف على الصوت
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
             recognition.lang = "ar-SA";
             recognition.continuous = false;
+            recognition.interimResults = false;
             
-            recordBtn.addEventListener("click", toggleRecording);
-            
+            // إعداد معالج الأحداث
             recognition.onstart = function() {
+                isRecording = true;
                 recordBtn.classList.add("recording");
-                recordBtn.textContent = "🛑 أوقف التسجيل";
-                statusDiv.textContent = "جاري الاستماع...";
+                statusDiv.textContent = "جاري الاستماع... تحدث الآن";
+                hideError();
             };
             
             recognition.onend = function() {
+                isRecording = false;
                 recordBtn.classList.remove("recording");
-                recordBtn.textContent = "🎤 اضغط للتكلم";
-                statusDiv.textContent = "";
-            };
-            
-            recognition.onerror = function(event) {
-                recordBtn.classList.remove("recording");
-                recordBtn.textContent = "🎤 اضغط للتكلم";
-                statusDiv.textContent = "حدث خطأ: " + event.error;
-                console.error("خطأ في التعرف على الصوت:", event.error);
+                statusDiv.textContent = "انتهى التسجيل. جاري المعالجة...";
             };
             
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
-                statusDiv.textContent = "تم التعرف على: " + transcript;
-                console.log("انت قلت:", transcript);
+                userText.textContent = transcript;
+                statusDiv.textContent = "تم التعرف على كلامك. جاري إرساله...";
                 
                 // إرسال النص إلى API
                 sendToAPI(transcript);
             };
-        } else {
-            recordBtn.disabled = true;
-            statusDiv.textContent = "المتصفح لا يدعم التعرف على الصوت";
-            console.error("المتصفح لا يدعم التعرف على الصوت");
+            
+            recognition.onerror = function(event) {
+                isRecording = false;
+                recordBtn.classList.remove("recording");
+                showError("حدث خطأ أثناء التعرف على الصوت: " + event.error);
+                statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
+            };
         }
         
+        // إرسال النص إلى API
+        function sendToAPI(text) {
+            statusDiv.textContent = "جاري الحصول على الرد من الذكاء الاصطناعي...";
+            
+            // استخدام API endpoint الموجود في الكود الأصلي
+            fetch("https://chat-gpt.x10.bz/vo.php?1=" + encodeURIComponent(text))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("فشل في الاتصال بالخادم: " + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.url) {
+                        statusDiv.textContent = "جاري تحميل الرد الصوتي...";
+                        replyAudio.src = data.url;
+                        
+                        replyAudio.onloadeddata = function() {
+                            statusDiv.textContent = "جاري تشغيل الرد...";
+                            replyAudio.play().catch(e => {
+                                showError("تعذر تشغيل الصوت: " + e.message);
+                                statusDiv.textContent = "انتهت المحادثة. انقر على الميكروفون للبدء مرة أخرى";
+                            });
+                        };
+                        
+                        replyAudio.onerror = function() {
+                            showError("تعذر تحميل الملف الصوتي. قد يكون الرابط غير صالح");
+                            statusDiv.textContent = "انتهت المحادثة. انقر على الميكروفون للبدء مرة أخرى";
+                        };
+                    } else {
+                        throw new Error("رد API غير متوقع. تأكد من أن الخادم يعمل correctly");
+                    }
+                })
+                .catch(error => {
+                    showError("حدث خطأ: " + error.message);
+                    statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
+                    console.error("تفاصيل الخطأ:", error);
+                });
+        }
+        
+        // إظهار رسالة الخطأ
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = "block";
+        }
+        
+        // إخفاء رسالة الخطأ
+        function hideError() {
+            errorDiv.style.display = "none";
+        }
+        
+        // بدء أو إيقاف التسجيل
         function toggleRecording() {
-            if (recordBtn.classList.contains("recording")) {
+            if (isRecording) {
                 recognition.stop();
             } else {
+                userText.textContent = "-";
+                hideError();
                 recognition.start();
             }
         }
         
-        function sendToAPI(text) {
-            statusDiv.textContent = "جاري معالجة طلبك...";
+        // تهيئة التطبيق عند تحميل الصفحة
+        document.addEventListener("DOMContentLoaded", function() {
+            initSpeechRecognition();
             
-            fetch("https://chat-gpt.x10.bz/vo.php?1=" + encodeURIComponent(text))
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("خطأ في الشبكة: " + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.url) {
-                    statusDiv.textContent = "جاري تشغيل الرد...";
-                    replyAudio.src = data.url;
-                    replyAudio.play().catch(e => {
-                        statusDiv.textContent = "خطأ في تشغيل الصوت: " + e.message;
-                        console.error("خطأ في تشغيل الصوت:", e);
-                    });
-                } else {
-                    throw new Error("رد API غير متوقع");
-                }
-            })
-            .catch(error => {
-                statusDiv.textContent = "حدث خطأ: " + error.message;
-                console.error("خطأ في fetch:", error);
+            // إضافة مستمع الأحداث للزر
+            recordBtn.addEventListener("click", toggleRecording);
+            
+            // إضافة مستمع الأحداث للصوت
+            replyAudio.addEventListener('play', () => {
+                statusDiv.textContent = "جاري تشغيل الرد...";
             });
-        }
-        
-        // إضافة مستمع للأحداث للصوت
-        replyAudio.addEventListener('playing', () => {
-            statusDiv.textContent = "جاري تشغيل الرد...";
-        });
-        
-        replyAudio.addEventListener('ended', () => {
-            statusDiv.textContent = "اكتمل التشغيل";
-        });
-        
-        replyAudio.addEventListener('error', (e) => {
-            statusDiv.textContent = "خطأ في تشغيل الملف الصوتي";
-            console.error("خطأ في الصوت:", e);
+            
+            replyAudio.addEventListener('ended', () => {
+                statusDiv.textContent = "اكتمل التشغيل. انقر على الميكروفون للبدء مرة أخرى";
+            });
+            
+            replyAudio.addEventListener('error', (e) => {
+                showError("حدث خطأ أثناء تشغيل الصوت");
+                statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
+            });
         });
     </script>
 </body>
