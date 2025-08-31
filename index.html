@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مساعد صوتي ذكي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -299,8 +300,11 @@
         function sendToAPI(text) {
             statusDiv.textContent = "جاري الحصول على الرد من الذكاء الاصطناعي...";
             
-            // استخدام API endpoint الموجود في الكود الأصلي
-            fetch("https://chat-gpt.x10.bz/vo.php?1=" + encodeURIComponent(text))
+            // استخدام CORS proxy لتجنب مشكلة "Failed to fetch"
+            const proxyUrl = 'https://corsproxy.io/?';
+            const apiUrl = "https://chat-gpt.x10.bz/vo.php?1=" + encodeURIComponent(text);
+            
+            fetch(proxyUrl + apiUrl)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error("فشل في الاتصال بالخادم: " + response.status);
@@ -308,9 +312,18 @@
                     return response.json();
                 })
                 .then(data => {
-                    if (data && data.url) {
+                    console.log("رد الخادم:", data);
+                    
+                    // البحث عن رابط الصوت في الرد (بطرق مختلفة)
+                    let audioUrl = data.url || data.audio_url || data.link || data.file;
+                    
+                    if (audioUrl) {
                         statusDiv.textContent = "جاري تحميل الرد الصوتي...";
-                        replyAudio.src = data.url;
+                        
+                        // إضافة طابع زمني لمنع التخزين المؤقت
+                        audioUrl += (audioUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                        
+                        replyAudio.src = audioUrl;
                         
                         replyAudio.onloadeddata = function() {
                             statusDiv.textContent = "جاري تشغيل الرد...";
