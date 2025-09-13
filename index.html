@@ -3,394 +3,2766 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مساعد صوتي ذكي</title>
+    <title>botHub</title>
+    <!-- الخطوط -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- أيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
+        /* منع النسخ وتحديد النص */
         * {
-            box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* إعادة تعيين التحديد للنصوص القابلة للقراءة */
+        .bot-description, .popup-description, .login-input, .form-input, .form-textarea, .search-box {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        /* المتغيرات الأساسية */
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #121212;
+            --accent-color: #0088cc;
+            --text-color: #ffffff;
+            --bg-blur: rgba(0, 0, 0, 0.7);
+            --card-bg: #1a1a1a;
+            --transition: all 0.3s ease;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --view-type: grid; /* القيمة الافتراضية */
+        }
+
+        [data-theme="light"] {
+            --primary-color: #ffffff;
+            --secondary-color: #f5f5f5;
+            --text-color: #000000;
+            --bg-blur: rgba(255, 255, 255, 0.7);
+            --card-bg: #eeeeee;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* إعدادات عامة */
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
         }
-        
+
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            transition: var(--transition);
             min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            padding-bottom: 80px;
         }
-        
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
+
+        /* الشريط العلوي */
         header {
-            text-align: center;
-            margin-bottom: 30px;
+            background-color: var(--secondary-color);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #4cc9f0, #4361ee);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        
-        .subtitle {
-            color: #a0a0c0;
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        /* السلايدر الجديد للبوتات */
+        .bots-slider-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            margin: 15px 0;
+            height: 220px;
+            padding: 0 10px;
+        }
+
+        .bots-slider {
+            display: flex;
+            transition: transform 0.5s ease;
+            height: 100%;
+            gap: 15px;
+        }
+
+        .bot-slide {
+            min-width: calc(100% / 3 - 10px);
+            height: 100%;
+            position: relative;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            flex-shrink: 0;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .bot-slide {
+                min-width: calc(100% / 2 - 10px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bot-slide {
+                min-width: 100%;
+            }
+        }
+
+        .bot-slide-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bot-slide-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 15px;
+            color: white;
+        }
+
+        .bot-slide-title {
             font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
-        
-        .mic-container {
+
+        .bot-slide-description {
+            font-size: 0.8rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .bots-slider-nav {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: center;
-            margin: 25px 0;
+            gap: 8px;
+            z-index: 5;
         }
-        
-        #recordBtn {
-            width: 100px;
-            height: 100px;
+
+        .bots-slider-dot {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
-            border: none;
+            background-color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .bots-slider-dot.active {
+            background-color: var(--accent-color);
+            transform: scale(1.2);
+        }
+
+        .bots-slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--bg-blur);
             color: white;
-            font-size: 2.5rem;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 5;
+            backdrop-filter: blur(5px);
+        }
+
+        .bots-slider-arrow.prev {
+            left: 10px;
+        }
+
+        .bots-slider-arrow.next {
+            right: 10px;
+        }
+
+        /* شريط البحث */
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 14px 20px;
+            padding-left: 45px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 30px;
+            color: var(--text-color);
+            font-size: 1rem;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .search-box:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        /* نتائج البحث */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 15px;
+            right: 15px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            margin-top: 10px;
+            box-shadow: var(--box-shadow);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 101;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            gap: 10px;
+            transition: var(--transition);
         }
-        
-        #recordBtn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.5);
+
+        .result-item:hover {
+            background-color: var(--accent-color);
         }
-        
-        #recordBtn.recording {
-            background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
-            animation: pulse 1.5s infinite;
-            box-shadow: 0 5px 15px rgba(247, 37, 133, 0.3);
+
+        .result-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .status {
-            text-align: center;
-            min-height: 60px;
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .transcript {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            min-height: 80px;
-        }
-        
-        .transcript h3 {
-            margin-bottom: 10px;
-            color: #4cc9f0;
-        }
-        
-        #userText {
-            color: #f5f5f5;
-            line-height: 1.6;
-        }
-        
-        .audio-container {
-            width: 100%;
-            margin: 20px 0;
-        }
-        
-        #replyAudio {
-            width: 100%;
-            margin-top: 10px;
-            border-radius: 10px;
-        }
-        
-        .audio-label {
-            display: block;
-            margin-bottom: 10px;
-            color: #4cc9f0;
-            font-weight: 600;
-        }
-        
-        .instructions {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        
-        .instructions h3 {
-            margin-bottom: 10px;
-            color: #4cc9f0;
-        }
-        
-        .instructions ul {
-            padding-right: 20px;
-            color: #a0a0c0;
-        }
-        
-        .instructions li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        
-        .error {
-            color: #f72585;
-            background: rgba(247, 37, 133, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
+
+        /* صفحة الأقسام */
+        .categories-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--primary-color);
+            z-index: 200;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: var(--transition);
             display: none;
         }
-        
-        footer {
-            margin-top: 30px;
+
+        .categories-page.active {
+            transform: translateX(0);
+            display: block;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .category-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px 15px;
             text-align: center;
-            color: #a0a0c0;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            background-color: var(--accent-color);
+        }
+
+        .category-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .category-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* شبكة البوتات */
+        .bots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 15px;
+        }
+
+        .bots-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .bot-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            cursor: pointer;
+            animation: fadeIn 0.5s ease;
+            position: relative;
+        }
+
+        .bot-card.grid {
+            /* يتم تطبيق الأنماط الحالية */
+        }
+
+        .bot-card.list {
+            display: flex;
+            height: 120px;
+        }
+
+        .bot-card.list .bot-image {
+            width: 120px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        .bot-card.list .bot-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .bot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .bot-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .bot-info {
+            padding: 15px;
+        }
+
+        .bot-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bot-description {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .bot-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bot-views, .bot-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            color: #ffc107;
             font-size: 0.9rem;
         }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
+
+        /* النافذة المنبثقة */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-blur);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .bot-popup {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.9);
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .popup-overlay.active .bot-popup {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .popup-header {
+            position: relative;
+        }
+
+        .popup-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .popup-content {
+            padding: 20px;
+        }
+
+        .popup-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .popup-description {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .popup-details {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            background-color: var(--secondary-color);
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .rating-section {
+            margin-bottom: 20px;
+        }
+
+        .rating-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .user-rating {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .user-star {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #555;
+            transition: var(--transition);
+        }
+
+        .user-star:hover, .user-star.active {
+            color: #ffc107;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background-color: #0066a3;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #333;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: var(--bg-blur);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            font-size: 1.2rem;
+        }
+
+        /* زر إضافة البوت للمطور */
+        .add-bot-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            display: none; /* مخفي بشكل افتراضي */
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+            z-index: 98;
+            transition: var(--transition);
+        }
+
+        .add-bot-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .add-bot-btn i {
+            font-size: 1.5rem;
+        }
+
+        /* زر اقتراح بوت */
+        .suggest-btn {
+            position: fixed;
+            bottom: 160px;
+            right: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+            z-index: 98;
+            transition: var(--transition);
+        }
+
+        .suggest-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        /* الأزرار السفلية */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--secondary-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 99;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #888;
+            font-size: 0.8rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .nav-btn.active {
+            color: var(--accent-color);
+        }
+
+        .nav-btn i {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+
+        /* صفحة الإعدادات */
+        .settings-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--primary-color);
+            z-index: 200;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: var(--transition);
+        }
+
+        .settings-page.active {
+            transform: translateX(0);
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .settings-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .settings-option {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .option-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: var(--transition);
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: var(--transition);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .view-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-option {
+            padding: 8px 15px;
+            background-color: var(--secondary-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .view-option.active {
+            background-color: var(--accent-color);
+        }
+
+        /* نافذة تسجيل الدخول */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-blur);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-box {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 400px;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .login-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        /* نافذة إضافة بوت */
+        .add-bot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-blur);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .add-bot-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .add-bot-form {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.9);
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .add-bot-overlay.active .add-bot-form {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 1rem;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* نافذة اقتراح بوت */
+        .suggest-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-blur);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .suggest-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .suggest-form {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.9);
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .suggest-overlay.active .suggest-form {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* الإشعارات */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 3000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 350px;
+        }
+
+        .notification.active {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-right: 4px solid #28a745;
+        }
+
+        .notification.error {
+            border-right: 4px solid #dc3545;
+        }
+
+        .notification.info {
+            border-right: 4px solid var(--accent-color);
+        }
+
+        .notification i {
+            font-size: 1.2rem;
+        }
+
+        .notification.success i {
+            color: #28a745;
+        }
+
+        .notification.error i {
+            color: #dc3545;
+        }
+
+        .notification.info i {
+            color: var(--accent-color);
+        }
+
+        /* الرسوم المتحركة */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            #recordBtn {
-                width: 80px;
-                height: 80px;
-                font-size: 2rem;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* تأثير التحميل */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--accent-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+       /* تحسين أنماط أزرار الأقسام العلوية */
+.categories {
+    display: flex;
+    overflow-x: auto;
+    padding: 15px 10px;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) var(--secondary-color);
+    margin: 10px 0 20px;
+    position: relative;
+}
+
+.categories::-webkit-scrollbar {
+    height: 6px;
+}
+
+.categories::-webkit-scrollbar-track {
+    background: var(--secondary-color);
+    border-radius: 10px;
+}
+
+.categories::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 10px;
+}
+
+.categories::-webkit-scrollbar-thumb:hover {
+    background: #0066a3;
+}
+
+.category-btn {
+    padding: 12px 20px;
+    background: linear-gradient(145deg, var(--secondary-color), #2a2a2a);
+    border: none;
+    border-radius: 50px;
+    color: var(--text-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    font-size: 0.95rem;
+
+    /* تعديلات */
+    white-space: nowrap;   /* النص بسطر واحد */
+    overflow: visible;     /* ما ينقص */
+    text-overflow: unset;  /* يلغي النقاط (…) */
+}
+
+.category-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, var(--accent-color), transparent);
+    opacity: 0;
+    transition: var(--transition);
+    z-index: 0;
+}
+
+.category-btn:hover::before {
+    opacity: 0.1;
+}
+
+.category-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-btn.active {
+    background: linear-gradient(145deg, var(--accent-color), #0066a3);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 136, 204, 0.3);
+}
+
+.category-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 3px;
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
+.category-btn i {
+    font-size: 1rem;
+    flex-shrink: 0; /* يمنع الأيقونة من التصغير */
+    width: 20px;    /* عرض ثابت للأيقونة */
+    text-align: center;
+    transition: var(--transition);
+}
+
+.category-btn.active i {
+    transform: scale(1.1);
+}
+
+/* تأثيرات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .categories {
+        gap: 8px;
+        padding: 12px 8px;
+    }
+    
+    .category-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .category-btn i {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .categories {
+        gap: 6px;
+    }
+    
+    .category-btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎙️ مساعد صوتي ذكي</h1>
-            <p class="subtitle">تحدث مع الذكاء الاصطناعي واستمع إلى ردوده</p>
-        </header>
-        
-        <div class="mic-container">
-            <button id="recordBtn">🎤</button>
-        </div>
-        
-        <div class="status" id="status">انقر على زر الميكروفون لبدء المحادثة</div>
-        
-        <div class="error" id="error"></div>
-        
-        <div class="transcript">
-            <h3>الكلام الذي تم التعرف عليه:</h3>
-            <div id="userText">-</div>
-        </div>
-        
-        <div class="audio-container">
-            <span class="audio-label">رد المساعد الصوتي:</span>
-            <audio id="replyAudio" controls></audio>
-        </div>
-        
-        <div class="instructions">
-            <h3>كيفية الاستخدام:</h3>
-            <ul>
-                <li>انقر على زر الميكروفون للتحدث</li>
-                <li>انتظر حتى يتم التعرف على كلامك</li>
-                <li>استمع إلى رد المساعد الصوتي</li>
-                <li>يمكنك إعادة التشغيل أو التوقف في أي وقت</li>
-            </ul>
+    <!-- نافذة تسجيل الدخول -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2 class="login-title">مرحباً بك في botHub</h2>
+            <input type="text" class="login-input" id="userNameInput" placeholder="أدخل اسمك">
+            <button class="btn btn-primary" id="loginBtn" style="width: 100%">
+                <i class="fas fa-sign-in-alt"></i>
+                دخول
+            </button>
         </div>
     </div>
-    
-    <footer>
-        تم التطوير باستخدام تقنية التعرف على الصوت والذكاء الاصطناعي
-    </footer>
+
+    <!-- الشريط العلوي -->
+    <header>
+        <div class="logo">
+            <i class="fab fa-telegram"></i>
+            <span>botHub</span>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">زائر</span>
+            <i class="fas fa-user"></i>
+        </div>
+    </header>
+
+    <!-- السلايدر الجديد للبوتات -->
+    <div class="bots-slider-container" id="botsSliderContainer">
+        <div class="bots-slider" id="botsSlider">
+            <!-- سيتم إضافة الشرائح من JavaScript -->
+        </div>
+        <div class="bots-slider-arrow prev" id="prevBotSlide">
+            <i class="fas fa-chevron-right"></i>
+        </div>
+        <div class="bots-slider-arrow next" id="nextBotSlide">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div class="bots-slider-nav" id="botsSliderNav">
+            <!-- سيتم إضافة نقاط التنقل من JavaScript -->
+        </div>
+    </div>
+
+    <!-- شريط البحث -->
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-box" placeholder="ابحث عن بوت أو وصف...">
+        <div class="search-results"></div>
+    </div>
+
+    <!-- أقسام البوتات -->
+    <div class="categories">
+        <button class="category-btn active" data-category="all">
+            <i class="fas fa-layer-group"></i>
+            الكل
+        </button>
+        <button class="category-btn" data-category="featured">
+            <i class="fas fa-star"></i>
+            مميز
+        </button>
+        <button class="category-btn" data-category="popular">
+            <i class="fas fa-fire"></i>
+            رائج
+        </button>
+        <button class="category-btn" data-category="new">
+            <i class="fas fa-certificate"></i>
+            جديد
+        </button>
+        <button class="category-btn" data-category="music">
+            <i class="fas fa-music"></i>
+            الموسيقى
+        </button>
+        <button class="category-btn" data-category="productivity">
+            <i class="fas fa-tasks"></i>
+            الإنتاجية
+        </button>
+        <button class="category-btn" data-category="entertainment">
+            <i class="fas fa-gamepad"></i>
+            الترفيه
+        </button>
+        <button class="category-btn" data-category="education">
+            <i class="fas fa-graduation-cap"></i>
+            التعليم
+        </button>
+        <button class="category-btn" data-category="utilities">
+            <i class="fas fa-tools"></i>
+            الأدوات
+        </button>
+    </div>
+
+    <!-- شبكة البوتات -->
+    <div class="bots-grid" id="botsContainer">
+        <!-- سيتم ملء هذا القسم بالبوتات من JavaScript -->
+    </div>
+
+    <!-- صفحة الأقسام -->
+    <div class="categories-page" id="categoriesPage">
+        <div class="settings-header">
+            <button class="back-btn" id="backFromCategories">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <h2 class="settings-title">الأقسام</h2>
+        </div>
+
+        <div class="categories-grid">
+            <div class="category-card" data-category="all">
+                <i class="fas fa-layer-group"></i>
+                <h3>الكل</h3>
+            </div>
+            <div class="category-card" data-category="featured">
+                <i class="fas fa-star"></i>
+                <h3>مميز</h3>
+            </div>
+            <div class="category-card" data-category="popular">
+                <i class="fas fa-fire"></i>
+                <h3>رائج</h3>
+            </div>
+            <div class="category-card" data-category="new">
+                <i class="fas fa-certificate"></i>
+                <h3>جديد</h3>
+            </div>
+            <div class="category-card" data-category="music">
+                <i class="fas fa-music"></i>
+                <h3>الموسيقى</h3>
+            </div>
+            <div class="category-card" data-category="productivity">
+                <i class="fas fa-tasks"></i>
+                <h3>الإنتاجية</h3>
+            </div>
+            <div class="category-card" data-category="entertainment">
+                <i class="fas fa-gamepad"></i>
+                <h3>الترفيه</h3>
+            </div>
+            <div class="category-card" data-category="education">
+                <i class="fas fa-graduation-cap"></i>
+                <h3>التعليم</h3>
+            </div>
+            <div class="category-card" data-category="utilities">
+                <i class="fas fa-tools"></i>
+                <h3>الأدوات</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- النافذة المنبثقة -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="bot-popup">
+            <div class="popup-header">
+                <img src="" alt="صورة البوت" class="popup-image" id="popupImage">
+                <div class="close-btn" id="closePopup">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div class="popup-content">
+                <h2 class="popup-name" id="popupName">
+                    <i class="fab fa-telegram"></i>
+                    <span></span>
+                </h2>
+                <p class="popup-description" id="popupDescription"></p>
+                
+                <div class="rating-section">
+                    <div class="rating-title">قيم هذا البوت:</div>
+                    <div class="user-rating">
+                        <span class="user-star" data-value="1">★</span>
+                        <span class="user-star" data-value="2">★</span>
+                        <span class="user-star" data-value="3">★</span>
+                        <span class="user-star" data-value="4">★</span>
+                        <span class="user-star" data-value="5">★</span>
+                    </div>
+                </div>
+                
+                <div class="popup-details" id="popupDetails">
+                    <!-- سيتم ملء هذا القسم من JavaScript -->
+                </div>
+                <div class="popup-buttons">
+                    <button class="btn btn-primary" id="openBot">
+                        <i class="fas fa-external-link-alt"></i>
+                        افتح البوت
+                    </button>
+                    <button class="btn btn-secondary" id="shareBot">
+                        <i class="fas fa-share"></i>
+                        مشاركة
+                    </button>
+                    <button class="btn btn-danger" id="deleteBot" style="display: none;">
+                        <i class="fas fa-trash"></i>
+                        حذف
+                    </button>
+                    <button class="btn btn-secondary" id="editBot" style="display: none;">
+                        <i class="fas fa-edit"></i>
+                        تعديل
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- زر إضافة بوت للمطور -->
+    <div class="add-bot-btn" id="addBotBtn">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <!-- زر اقتراح بوت -->
+    <div class="suggest-btn" id="suggestBtn">
+        <i class="fas fa-lightbulb"></i>
+        اقترح بوت
+    </div>
+
+    <!-- الأزرار السفلية -->
+    <nav class="bottom-nav">
+        <div class="nav-btn active" id="homeBtn">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </div>
+        <div class="nav-btn" id="categoriesBtn">
+            <i class="fas fa-folder"></i>
+            <span>الأقسام</span>
+        </div>
+        <div class="nav-btn" id="searchBtn">
+            <i class="fas fa-search"></i>
+            <span>بحث</span>
+        </div>
+        <div class="nav-btn" id="suggestNavBtn">
+            <i class="fas fa-lightbulb"></i>
+            <span>اقتراح</span>
+        </div>
+        <div class="nav-btn" id="settingsBtn">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </div>
+    </nav>
+
+    <!-- صفحة الإعدادات -->
+    <div class="settings-page" id="settingsPage">
+        <div class="settings-header">
+            <button class="back-btn" id="backFromSettings">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <h2 class="settings-title">الإعدادات</h2>
+        </div>
+
+        <div class="settings-option">
+            <h3 class="option-title">
+                <i class="fas fa-palette"></i>
+                المظهر
+            </h3>
+            <label class="theme-switch">
+                <input type="checkbox" id="themeSwitch">
+                <span class="slider"></span>
+            </label>
+            <span id="themeStatus">الوضع الداكن</span>
+        </div>
+
+        <div class="settings-option">
+            <h3 class="option-title">
+                <i class="fas fa-th-large"></i>
+                طريقة العرض
+            </h3>
+            <div class="view-options">
+                <div class="view-option active" data-view="grid">
+                    <i class="fas fa-th"></i>
+                    شبكة
+                </div>
+                <div class="view-option" data-view="list">
+                    <i class="fas fa-list"></i>
+                    قائمة
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-option">
+            <h3 class="option-title">
+                <i class="fas fa-bell"></i>
+                الإشعارات
+            </h3>
+            <label class="theme-switch">
+                <input type="checkbox" id="notificationsSwitch" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="notificationsStatus">مفعل</span>
+        </div>
+
+        <div class="settings-option">
+            <h3 class="option-title">
+                <i class="fas fa-info-circle"></i>
+                حول التطبيق
+            </h3>
+            <p>إصدار التطبيق: 2.0.0</p>
+            <p>تم التطوير باستخدام HTML و CSS و JavaScript</p>
+        </div>
+
+        <div class="settings-option">
+            <h3 class="option-title">
+                <i class="fas fa-user"></i>
+                حساب المستخدم
+            </h3>
+            <p>اسم المستخدم: <span id="settingsUserName">زائر</span></p>
+            <button class="btn btn-secondary" id="changeUserBtn">
+                <i class="fas fa-exchange-alt"></i>
+                تغيير المستخدم
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة بوت -->
+    <div class="add-bot-overlay" id="addBotOverlay">
+        <div class="add-bot-form">
+            <h2 class="form-title">إضافة بوت جديد</h2>
+            <div class="form-group">
+                <label class="form-label">اسم البوت</label>
+                <input type="text" class="form-input" id="botNameInput">
+            </div>
+            <div class="form-group">
+                <label class="form-label">وصف البوت</label>
+                <textarea class="form-textarea" id="botDescriptionInput"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط الصورة</label>
+                <input type="text" class="form-input" id="botImageInput" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط البوت</label>
+                <input type="text" class="form-input" id="botLinkInput" placeholder="https://t.me/botname">
+            </div>
+            <div class="form-group">
+                <label class="form-label">القسم</label>
+                <select class="form-input" id="botCategoryInput">
+                    <option value="featured">مميز</option>
+                    <option value="popular">رائج</option>
+                    <option value="new">جديد</option>
+                    <option value="music">الموسيقى</option>
+                    <option value="productivity">الإنتاجية</option>
+                    <option value="entertainment">الترفيه</option>
+                    <option value="education">التعليم</option>
+                    <option value="utilities">الأدوات</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">نوع البوت</label>
+                <div>
+                    <input type="checkbox" id="botFeaturedInput">
+                    <label for="botFeaturedInput">مميز</label>
+                    <input type="checkbox" id="botPopularInput">
+                    <label for="botPopularInput">رائج</label>
+                    <input type="checkbox" id="botNewInput">
+                    <label for="botNewInput">جديد</label>
+                </div>
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-primary" id="submitBotBtn">
+                    <i class="fas fa-plus"></i>
+                    إضافة البوت
+                </button>
+                <button class="btn btn-secondary" id="cancelAddBotBtn">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل بوت -->
+    <div class="add-bot-overlay" id="editBotOverlay">
+        <div class="add-bot-form">
+            <h2 class="form-title">تعديل البوت</h2>
+            <div class="form-group">
+                <label class="form-label">اسم البوت</label>
+                <input type="text" class="form-input" id="editBotNameInput">
+            </div>
+            <div class="form-group">
+                <label class="form-label">وصف البوت</label>
+                <textarea class="form-textarea" id="editBotDescriptionInput"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط الصورة</label>
+                <input type="text" class="form-input" id="editBotImageInput" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط البوت</label>
+                <input type="text" class="form-input" id="editBotLinkInput" placeholder="https://t.me/botname">
+            </div>
+            <div class="form-group">
+                <label class="form-label">القسم</label>
+                <select class="form-input" id="editBotCategoryInput">
+                    <option value="featured">مميز</option>
+                    <option value="popular">رائج</option>
+                    <option value="new">جديد</option>
+                    <option value="music">الموسيقى</option>
+                    <option value="productivity">الإنتاجية</option>
+                    <option value="entertainment">الترفيه</option>
+                    <option value="education">التعليم</option>
+                    <option value="utilities">الأدوات</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">نوع البوت</label>
+                <div>
+                    <input type="checkbox" id="editBotFeaturedInput">
+                    <label for="editBotFeaturedInput">مميز</label>
+                    <input type="checkbox" id="editBotPopularInput">
+                    <label for="editBotPopularInput">رائج</label>
+                    <input type="checkbox" id="editBotNewInput">
+                    <label for="editBotNewInput">جديد</label>
+                </div>
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-primary" id="updateBotBtn">
+                    <i class="fas fa-save"></i>
+                    حفظ التعديلات
+                </button>
+                <button class="btn btn-secondary" id="cancelEditBotBtn">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة اقتراح بوت -->
+    <div class="suggest-overlay" id="suggestOverlay">
+        <div class="suggest-form">
+            <h2 class="form-title">اقتراح بوت</h2>
+            <div class="form-group">
+                <label class="form-label">اسم البوت</label>
+                <input type="text" class="form-input" id="suggestNameInput">
+            </div>
+            <div class="form-group">
+                <label class="form-label">وصف البوت</label>
+                <textarea class="form-textarea" id="suggestDescriptionInput"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط البوت</label>
+                <input type="text" class="form-input" id="suggestLinkInput" placeholder="https://t.me/botname">
+            </div>
+            <div class="form-group">
+                <label class="form-label">رابط الصورة (اختياري)</label>
+                <input type="text" class="form-input" id="suggestImageInput" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-primary" id="submitSuggestBtn">
+                    <i class="fas fa-paper-plane"></i>
+                    إرسال الاقتراح
+                </button>
+                <button class="btn btn-secondary" id="cancelSuggestBtn">
+                    <i class="fas fa-times"></i>
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإشعارات -->
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle"></i>
+        <span id="notificationText"></span>
+    </div>
 
     <script>
-        // عناصر DOM
-        const recordBtn = document.getElementById("recordBtn");
-        const statusDiv = document.getElementById("status");
-        const errorDiv = document.getElementById("error");
-        const userText = document.getElementById("userText");
-        const replyAudio = document.getElementById("replyAudio");
+        // تهيئة Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3crsDcJI1qYipy6awM6VIoAamLC51zi4",
+            authDomain: "cinmanryo.firebaseapp.com",
+            databaseURL: "https://cinmanryo-default-rtdb.firebaseio.com",
+            projectId: "cinmanryo",
+            storageBucket: "cinmanryo.appspot.com",
+            messagingSenderId: "605207743179",
+            appId: "1:605207743179:web:0bb0b6efdd208e9094a94e",
+            measurementId: "G-SH32EZ7ZY6"
+        };
         
-        // متغيرات التطبيق
-        let recognition;
-        let isRecording = false;
-        
-        // تهيئة التعرف على الصوت
-        function initSpeechRecognition() {
-            // التحقق من دعم المتصفح
-            if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                showError("المتصفح الخاص بك لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge");
-                recordBtn.disabled = true;
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // بيانات البوتات الافتراضية
+        const defaultBots = [
+            {
+                id: 1,
+                name: "بوت الموسيقى",
+                description: "بوت رائع للاستماع إلى الموسيقى ومشاركتها مع الأصدقاء على تلجرام. يدعم جميع الصيغ والصوتيات.",
+                image: "https://placehold.co/600x400/0088cc/white?text=Music+Bot",
+                category: "music",
+                views: 1250,
+                rating: 4.8,
+                totalRatings: 24,
+                link: "https://t.me/musicbot",
+                featured: true,
+                popular: true,
+                new: false
+            },
+            {
+                id: 2,
+                name: "بوت المترجم",
+                description: "بوت ترجمة فوري يدعم أكثر من 100 لغة. يمكنه ترجمة النصوص والرسائل بجودة عالية.",
+                image: "https://placehold.co/600x400/0066ff/white?text=Translate+Bot",
+                category: "utilities",
+                views: 890,
+                rating: 4.5,
+                totalRatings: 18,
+                link: "https://t.me/translatebot",
+                featured: false,
+                popular: true,
+                new: false
+            },
+            {
+                id: 3,
+                name: "بوت الألعاب",
+                description: "احصل على أفضل الألعاب المسلية والتحديات اليومية مع بوت الألعاب المميز.",
+                image: "https://placehold.co/600x400/00aa00/white?text=Games+Bot",
+                category: "entertainment",
+                views: 1560,
+                rating: 4.9,
+                totalRatings: 31,
+                link: "https://t.me/gamesbot",
+                featured: true,
+                popular: true,
+                new: false
+            },
+            {
+                id: 4,
+                name: "بوت التعلم",
+                description: "بوت تعليمي يحتوي على دورات ودروس في مختلف المجالات والعلوم.",
+                image: "https://placehold.co/600x400/ff5500/white?text=Education+Bot",
+                category: "education",
+                views: 750,
+                rating: 4.7,
+                totalRatings: 15,
+                link: "https://t.me/educationbot",
+                featured: false,
+                popular: false,
+                new: true
+            },
+            {
+                id: 5,
+                name: "بوت الأخبار",
+                description: "احصل على آخر الأخبار العاجلة والمقالات من مختلف المصادر حول العالم.",
+                image: "https://placehold.co/600x400/cc0000/white?text=News+Bot",
+                category: "utilities",
+                views: 2100,
+                rating: 4.6,
+                totalRatings: 42,
+                link: "https://t.me/newsbot",
+                featured: false,
+                popular: true,
+                new: false
+            },
+            {
+                id: 6,
+                name: "بوت التمارين",
+                description: "بوت لياقة بدنية يقدم تمارين يومية وبرامج تدريبية ونصائح صحية.",
+                image: "https://placehold.co/600x400/aa00aa/white?text=Fitness+Bot",
+                category: "utilities",
+                views: 680,
+                rating: 4.4,
+                totalRatings: 12,
+                link: "https://t.me/fitnessbot",
+                featured: false,
+                popular: false,
+                new: true
+            }
+        ];
+
+        // العناصر الأساسية في DOM
+        const loginOverlay = document.getElementById('loginOverlay');
+        const userNameInput = document.getElementById('userNameInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const userName = document.getElementById('userName');
+        const settingsUserName = document.getElementById('settingsUserName');
+        const changeUserBtn = document.getElementById('changeUserBtn');
+        const botsContainer = document.getElementById('botsContainer');
+        const searchBox = document.querySelector('.search-box');
+        const searchResults = document.querySelector('.search-results');
+        const popupOverlay = document.getElementById('popupOverlay');
+        const closePopup = document.getElementById('closePopup');
+        const openBotBtn = document.getElementById('openBot');
+        const shareBotBtn = document.getElementById('shareBot');
+        const deleteBotBtn = document.getElementById('deleteBot');
+        const editBotBtn = document.getElementById('editBot');
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPage = document.getElementById('settingsPage');
+        const backFromSettings = document.getElementById('backFromSettings');
+        const themeSwitch = document.getElementById('themeSwitch');
+        const notificationsSwitch = document.getElementById('notificationsSwitch');
+        const themeStatus = document.getElementById('themeStatus');
+        const notificationsStatus = document.getElementById('notificationsStatus');
+        const addBotBtn = document.getElementById('addBotBtn');
+        const addBotOverlay = document.getElementById('addBotOverlay');
+        const editBotOverlay = document.getElementById('editBotOverlay');
+        const cancelAddBotBtn = document.getElementById('cancelAddBotBtn');
+        const submitBotBtn = document.getElementById('submitBotBtn');
+        const updateBotBtn = document.getElementById('updateBotBtn');
+        const cancelEditBotBtn = document.getElementById('cancelEditBotBtn');
+        const suggestBtn = document.getElementById('suggestBtn');
+        const suggestNavBtn = document.getElementById('suggestNavBtn');
+        const suggestOverlay = document.getElementById('suggestOverlay');
+        const cancelSuggestBtn = document.getElementById('cancelSuggestBtn');
+        const submitSuggestBtn = document.getElementById('submitSuggestBtn');
+        const homeBtn = document.getElementById('homeBtn');
+        const categoriesBtn = document.getElementById('categoriesBtn');
+        const categoriesPage = document.getElementById('categoriesPage');
+        const backFromCategories = document.getElementById('backFromCategories');
+        const categoryCards = document.querySelectorAll('.category-card');
+        const searchBtn = document.getElementById('searchBtn');
+        const viewOptions = document.querySelectorAll('.view-option');
+        const botsSliderContainer = document.getElementById('botsSliderContainer');
+        const botsSlider = document.getElementById('botsSlider');
+        const botsSliderNav = document.getElementById('botsSliderNav');
+        const prevBotSlide = document.getElementById('prevBotSlide');
+        const nextBotSlide = document.getElementById('nextBotSlide');
+        const userStars = document.querySelectorAll('.user-star');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+
+        // المتغيرات العامة
+        let currentBot = null;
+        let activeCategory = 'all';
+        let currentUser = null;
+        let isDeveloper = false;
+        let allBots = [];
+        let currentBotSlide = 0;
+        let botSlideInterval;
+        let currentView = localStorage.getItem('viewType') || 'list';
+        let editingBotId = null;
+
+        // تهيئة التطبيق
+        function initApp() {
+            checkUserLogin();
+            setupEventListeners();
+            loadBotsFromFirebase();
+            applyViewType();
+            checkTheme();
+        }
+
+        // إظهار إشعار
+        function showNotification(message, type = 'info') {
+            notification.className = `notification ${type}`;
+            notificationText.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+
+        // تطبيق نوع العرض
+        function applyViewType() {
+            // تحديث الإعدادات
+            document.querySelectorAll('.view-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.dataset.view === currentView) {
+                    option.classList.add('active');
+                }
+            });
+            
+            // تطبيق نوع العرض
+            if (currentView === 'grid') {
+                botsContainer.className = 'bots-grid';
+                document.querySelectorAll('.bot-card').forEach(card => {
+                    card.classList.remove('list');
+                    card.classList.add('grid');
+                });
+            } else {
+                botsContainer.className = 'bots-list';
+                document.querySelectorAll('.bot-card').forEach(card => {
+                    card.classList.remove('grid');
+                    card.classList.add('list');
+                });
+            }
+        }
+
+        // إعداد السلايدر للبوتات المميزة
+        function setupBotsSlider() {
+            // الحصول على البوتات المميزة
+            const featuredBots = allBots.filter(bot => bot.featured);
+            if (featuredBots.length === 0) {
+                botsSliderContainer.style.display = 'none';
                 return;
             }
             
-            // إنشاء كائن التعرف على الصوت
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = "ar-SA";
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            botsSliderContainer.style.display = 'block';
+            botsSlider.innerHTML = '';
+            botsSliderNav.innerHTML = '';
             
-            // إعداد معالج الأحداث
-            recognition.onstart = function() {
-                isRecording = true;
-                recordBtn.classList.add("recording");
-                statusDiv.textContent = "جاري الاستماع... تحدث الآن";
-                hideError();
-            };
-            
-            recognition.onend = function() {
-                isRecording = false;
-                recordBtn.classList.remove("recording");
-                statusDiv.textContent = "انتهى التسجيل. جاري المعالجة...";
-            };
-            
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                userText.textContent = transcript;
-                statusDiv.textContent = "تم التعرف على كلامك. جاري إرساله...";
+            featuredBots.forEach((bot, index) => {
+                // إضافة شريحة البوت
+                const botSlide = document.createElement('div');
+                botSlide.className = 'bot-slide';
+                botSlide.innerHTML = `
+                    <img src="${bot.image}" alt="${bot.name}" class="bot-slide-image">
+                    <div class="bot-slide-content">
+                        <h3 class="bot-slide-title">${bot.name}</h3>
+                        <p class="bot-slide-description">${bot.description.substring(0, 60)}...</p>
+                    </div>
+                `;
+                botSlide.addEventListener('click', () => {
+                    openBotPopup(bot);
+                    incrementBotViews(bot);
+                });
+                botsSlider.appendChild(botSlide);
                 
-                // إرسال النص إلى API
-                sendToAPI(transcript);
-            };
+                // إضافة نقطة التنقل
+                const dot = document.createElement('div');
+                dot.className = `bots-slider-dot ${index === 0 ? 'active' : ''}`;
+                dot.dataset.index = index;
+                dot.addEventListener('click', () => goToBotSlide(index));
+                botsSliderNav.appendChild(dot);
+            });
             
-            recognition.onerror = function(event) {
-                isRecording = false;
-                recordBtn.classList.remove("recording");
-                showError("حدث خطأ أثناء التعرف على الصوت: " + event.error);
-                statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
-            };
+            // بدء التحريك التلقائي
+            startBotsSlider();
         }
-        
-        // إرسال النص إلى API
-        function sendToAPI(text) {
-            statusDiv.textContent = "جاري الحصول على الرد من الذكاء الاصطناعي...";
+
+        // بدء تحريك سلايدر البوتات
+        function startBotsSlider() {
+            clearInterval(botSlideInterval);
+            botSlideInterval = setInterval(() => {
+                nextBotSlide.click();
+            }, 5000);
+        }
+
+        // الانتقال إلى شريحة بوت محددة
+        function goToBotSlide(index) {
+            const botSlides = document.querySelectorAll('.bot-slide');
+            if (index >= botSlides.length) index = 0;
+            if (index < 0) index = botSlides.length - 1;
             
-            // استخدام CORS proxy لتجنب مشكلة "Failed to fetch"
-            const proxyUrl = 'https://corsproxy.io/?';
-            const apiUrl = "https://chat-gpt.x10.bz/vo.php?1=" + encodeURIComponent(text);
+            currentBotSlide = index;
+            botsSlider.style.transform = `translateX(-${currentBotSlide * (100 / 3)}%)`;
             
-            fetch(proxyUrl + apiUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("فشل في الاتصال بالخادم: " + response.status);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log("رد الخادم:", data);
+            // تحديث النقاط النشطة
+            document.querySelectorAll('.bots-slider-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentBotSlide);
+            });
+            
+            // إعادة تشغيل المؤقت
+            startBotsSlider();
+        }
+
+        // التحقق من تسجيل الدخول
+        function checkUserLogin() {
+            const savedUser = localStorage.getItem('telegramBotsUser');
+            if (savedUser) {
+                currentUser = savedUser;
+                userName.textContent = savedUser;
+                settingsUserName.textContent = savedUser;
+                loginOverlay.style.display = 'none';
+                
+                // التحقق إذا كان المستخدم مطور
+                isDeveloper = (savedUser === 'adminh');
+                if (isDeveloper) {
+                    addBotBtn.style.display = 'flex';
+                }
+            } else {
+                loginOverlay.style.display = 'flex';
+            }
+        }
+
+        // تحميل البوتات من Firebase
+        function loadBotsFromFirebase() {
+            const botsRef = database.ref('bots');
+            botsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    allBots = Object.values(data);
+                    displayBots(allBots);
+                    setupBotsSlider();
+                } else {
+                    // إذا لم توجد بيانات، استخدم البوتات الافتراضية
+                    allBots = defaultBots;
+                    displayBots(allBots);
+                    setupBotsSlider();
                     
-                    // البحث عن رابط الصوت في الرد (بطرق مختلفة)
-                    let audioUrl = data.url || data.audio_url || data.link || data.file;
-                    
-                    if (audioUrl) {
-                        statusDiv.textContent = "جاري تحميل الرد الصوتي...";
-                        
-                        // إضافة طابع زمني لمنع التخزين المؤقت
-                        audioUrl += (audioUrl.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-                        
-                        replyAudio.src = audioUrl;
-                        
-                        replyAudio.onloadeddata = function() {
-                            statusDiv.textContent = "جاري تشغيل الرد...";
-                            replyAudio.play().catch(e => {
-                                showError("تعذر تشغيل الصوت: " + e.message);
-                                statusDiv.textContent = "انتهت المحادثة. انقر على الميكروفون للبدء مرة أخرى";
-                            });
-                        };
-                        
-                        replyAudio.onerror = function() {
-                            showError("تعذر تحميل الملف الصوتي. قد يكون الرابط غير صالح");
-                            statusDiv.textContent = "انتهت المحادثة. انقر على الميكروفون للبدء مرة أخرى";
-                        };
+                    // حفظ البوتات الافتراضية في Firebase
+                    defaultBots.forEach(bot => {
+                        const newBotRef = database.ref('bots').push();
+                        newBotRef.set(bot);
+                    });
+                }
+            });
+        }
+
+        // عرض البوتات
+        function displayBots(botsToShow) {
+            botsContainer.innerHTML = '';
+            
+            if (botsToShow.length === 0) {
+                botsContainer.innerHTML = `
+                    <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px;">
+                        <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; color: #888;"></i>
+                        <h3>لا توجد نتائج</h3>
+                        <p>حاول البحث بكلمات أخرى</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // ترتيب البوتات عشوائيًا للأقسام الخاصة
+            if (activeCategory === 'featured') {
+                botsToShow = botsToShow.filter(bot => bot.featured);
+                botsToShow = shuffleArray(botsToShow);
+            } else if (activeCategory === 'popular') {
+                botsToShow = botsToShow.filter(bot => bot.popular);
+                botsToShow = shuffleArray(botsToShow);
+            } else if (activeCategory === 'new') {
+                botsToShow = botsToShow.filter(bot => bot.new);
+                botsToShow = shuffleArray(botsToShow);
+            }
+            
+            botsToShow.forEach(bot => {
+                const botCard = document.createElement('div');
+                botCard.className = `bot-card ${currentView}`;
+                
+                // إنشاء تقييم النجوم
+                let starsHtml = '';
+                const fullStars = Math.floor(bot.rating);
+                const hasHalfStar = bot.rating % 1 >= 0.5;
+                
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= fullStars) {
+                        starsHtml += '<span class="star">★</span>';
+                    } else if (i === fullStars + 1 && hasHalfStar) {
+                        starsHtml += '<span class="star">☆</span>';
                     } else {
-                        throw new Error("رد API غير متوقع. تأكد من أن الخادم يعمل correctly");
+                        starsHtml += '<span class="star">☆</span>';
+                    }
+                }
+                
+                botCard.innerHTML = `
+                    <img src="${bot.image}" alt="${bot.name}" class="bot-image">
+                    <div class="bot-info">
+                        <h3 class="bot-name">
+                            <i class="fab fa-telegram"></i>
+                            ${bot.name}
+                        </h3>
+                        <p class="bot-description">${bot.description}</p>
+                        <div class="bot-meta">
+                            <div class="bot-views">
+                                <i class="fas fa-eye"></i>
+                                <span>${bot.views} مشاهدة</span>
+                            </div>
+                            <div class="bot-rating">
+                                <div class="rating-stars">${starsHtml}</div>
+                                <span>${bot.rating}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                botCard.addEventListener('click', () => {
+                    openBotPopup(bot);
+                    incrementBotViews(bot);
+                });
+                botsContainer.appendChild(botCard);
+            });
+            
+            applyViewType();
+        }
+
+        // خلط مصفوفة عشوائيًا
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // زيادة عدد مشاهدات البوت (مرة واحدة لكل مستخدم)
+        function incrementBotViews(bot) {
+            const userViewedBots = JSON.parse(localStorage.getItem('userViewedBots') || '{}');
+            
+            if (!userViewedBots[currentUser]) {
+                userViewedBots[currentUser] = [];
+            }
+            
+            // التحقق إذا كان المستخدم قد شاهد البوت مسبقًا
+            if (!userViewedBots[currentUser].includes(bot.id)) {
+                userViewedBots[currentUser].push(bot.id);
+                localStorage.setItem('userViewedBots', JSON.stringify(userViewedBots));
+                
+                const botRef = database.ref('bots').orderByChild('id').equalTo(bot.id);
+                botRef.once('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const key = Object.keys(snapshot.val())[0];
+                        const updatedViews = (bot.views || 0) + 1;
+                        database.ref('bots/' + key).update({ views: updatedViews });
+                    }
+                });
+            }
+        }
+
+        // فتح نافذة البوت
+        function openBotPopup(bot) {
+            currentBot = bot;
+            
+            document.getElementById('popupImage').src = bot.image;
+            document.getElementById('popupName').querySelector('span').textContent = bot.name;
+            document.getElementById('popupDescription').textContent = bot.description;
+            
+            // إنشاء تقييم النجوم للنافذة المنبثقة
+            let starsHtml = '';
+            const fullStars = Math.floor(bot.rating);
+            const hasHalfStar = bot.rating % 1 >= 0.5;
+            
+            for (let i = 1; i <= 5; i++) {
+                if (i <= fullStars) {
+                    starsHtml += `<span class="user-star ${i <= fullStars ? 'active' : ''}" data-value="${i}">★</span>`;
+                } else if (i === fullStars + 1 && hasHalfStar) {
+                    starsHtml += `<span class="user-star" data-value="${i}">★</span>`;
+                } else {
+                    starsHtml += `<span class="user-star" data-value="${i}">☆</span>`;
+                }
+            }
+            
+            document.querySelector('.user-rating').innerHTML = starsHtml;
+            
+            // إضافة مستمعي الأحداث للنجوم
+            document.querySelectorAll('.user-star').forEach(star => {
+                star.addEventListener('click', (e) => {
+                    const rating = parseInt(e.target.dataset.value);
+                    rateBot(bot, rating);
+                });
+            });
+            
+            const popupDetails = document.getElementById('popupDetails');
+            popupDetails.innerHTML = `
+                <div class="detail-item">
+                    <i class="fas fa-eye"></i>
+                    <span>${bot.views || 0} مشاهدة</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-star"></i>
+                    <span>${bot.rating || 0} تقييم (${bot.totalRatings || 0} تقييمات)</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-tag"></i>
+                    <span>${getCategoryName(bot.category)}</span>
+                </div>
+            `;
+            
+            // إظهار أزرار المطور إذا كان مستخدم مطور
+            if (isDeveloper) {
+                deleteBotBtn.style.display = 'block';
+                editBotBtn.style.display = 'block';
+            } else {
+                deleteBotBtn.style.display = 'none';
+                editBotBtn.style.display = 'none';
+            }
+            
+            popupOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // تقييم البوت
+        function rateBot(bot, rating) {
+            if (!currentUser) {
+                showNotification('يجب تسجيل الدخول لتتمكن من التقييم', 'error');
+                return;
+            }
+            
+            const botRef = database.ref('bots').orderByChild('id').equalTo(bot.id);
+            botRef.once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const key = Object.keys(snapshot.val())[0];
+                    const currentRating = bot.rating || 0;
+                    const currentTotal = bot.totalRatings || 0;
+                    
+                    // حساب التقييم الجديد
+                    const newTotal = currentTotal + 1;
+                    const newRating = ((currentRating * currentTotal) + rating) / newTotal;
+                    
+                    // تحديث البيانات
+                    database.ref('bots/' + key).update({ 
+                        rating: newRating.toFixed(1),
+                        totalRatings: newTotal
+                    });
+                    
+                    // تحديث الواجهة
+                    document.querySelectorAll('.user-star').forEach(star => {
+                        const starValue = parseInt(star.dataset.value);
+                        star.classList.toggle('active', starValue <= rating);
+                    });
+                    
+                    showNotification('شكراً لك على تقييم البوت!', 'success');
+                }
+            });
+        }
+
+        // حذف البوت
+        function deleteBot(bot) {
+            if (!isDeveloper) {
+                showNotification('غير مصرح لك بحذف البوتات', 'error');
+                return;
+            }
+            
+            const botRef = database.ref('bots').orderByChild('id').equalTo(bot.id);
+            botRef.once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const key = Object.keys(snapshot.val())[0];
+                    database.ref('bots/' + key).remove()
+                        .then(() => {
+                            showNotification('تم حذف البوت بنجاح', 'success');
+                            closeBotPopup();
+                        })
+                        .catch((error) => {
+                            showNotification('حدث خطأ أثناء حذف البوت: ' + error.message, 'error');
+                        });
+                }
+            });
+        }
+
+        // فتح نافذة تعديل البوت
+        function openEditBotPopup(bot) {
+            editingBotId = bot.id;
+            
+            // تعبئة الحقول ببيانات البوت الحالية
+            document.getElementById('editBotNameInput').value = bot.name;
+            document.getElementById('editBotDescriptionInput').value = bot.description;
+            document.getElementById('editBotImageInput').value = bot.image;
+            document.getElementById('editBotLinkInput').value = bot.link;
+            document.getElementById('editBotCategoryInput').value = bot.category;
+            document.getElementById('editBotFeaturedInput').checked = bot.featured || false;
+            document.getElementById('editBotPopularInput').checked = bot.popular || false;
+            document.getElementById('editBotNewInput').checked = bot.new || false;
+            
+            editBotOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // تحديث البوت
+        function updateBot() {
+            const name = document.getElementById('editBotNameInput').value.trim();
+            const description = document.getElementById('editBotDescriptionInput').value.trim();
+            const image = document.getElementById('editBotImageInput').value.trim();
+            const link = document.getElementById('editBotLinkInput').value.trim();
+            const category = document.getElementById('editBotCategoryInput').value;
+            const featured = document.getElementById('editBotFeaturedInput').checked;
+            const popular = document.getElementById('editBotPopularInput').checked;
+            const isNew = document.getElementById('editBotNewInput').checked;
+            
+            if (name && description && image && link) {
+                const botRef = database.ref('bots').orderByChild('id').equalTo(editingBotId);
+                botRef.once('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const key = Object.keys(snapshot.val())[0];
+                        const updatedBot = {
+                            name,
+                            description,
+                            image,
+                            link,
+                            category,
+                            featured,
+                            popular,
+                            new: isNew
+                        };
+                        
+                        database.ref('bots/' + key).update(updatedBot)
+                            .then(() => {
+                                showNotification('تم تحديث البوت بنجاح', 'success');
+                                closeEditBotPopup();
+                                closeBotPopup();
+                            })
+                            .catch((error) => {
+                                showNotification('حدث خطأ أثناء تحديث البوت: ' + error.message, 'error');
+                            });
+                    }
+                });
+            } else {
+                showNotification('يرجى ملء جميع الحقول', 'error');
+            }
+        }
+
+        // إغلاق نافذة البوت
+        function closeBotPopup() {
+            popupOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // إغلاق نافذة تعديل البوت
+        function closeEditBotPopup() {
+            editBotOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // الحصول على اسم القسم
+        function getCategoryName(category) {
+            const categories = {
+                'featured': 'مميز',
+                'popular': 'رائج',
+                'new': 'جديد',
+                'music': 'الموسيقى',
+                'productivity': 'الإنتاجية',
+                'entertainment': 'الترفيه',
+                'education': 'التعليم',
+                'utilities': 'الأدوات'
+            };
+            return categories[category] || 'عام';
+        }
+
+        // تصفية البوتات حسب القسم
+        function filterBotsByCategory(category) {
+            activeCategory = category;
+            if (category === 'all') {
+                displayBots(allBots);
+            } else {
+                const filteredBots = allBots.filter(bot => 
+                    bot.category === category || 
+                    (category === 'featured' && bot.featured) ||
+                    (category === 'popular' && bot.popular) ||
+                    (category === 'new' && bot.new)
+                );
+                displayBots(filteredBots);
+            }
+        }
+
+        // البحث عن البوتات
+        function searchBots(query) {
+            if (!query.trim()) {
+                searchResults.classList.remove('active');
+                filterBotsByCategory(activeCategory);
+                return;
+            }
+            
+            const results = allBots.filter(bot => 
+                bot.name.includes(query) || 
+                bot.description.includes(query) ||
+                getCategoryName(bot.category).includes(query)
+            );
+            
+            // عرض نتائج البحث
+            searchResults.innerHTML = '';
+            if (results.length > 0) {
+                results.forEach(bot => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    resultItem.innerHTML = `
+                        <img src="${bot.image}" alt="${bot.name}">
+                        <div>
+                            <h4>${bot.name}</h4>
+                            <p>${bot.description.substring(0, 50)}...</p>
+                        </div>
+                    `;
+                    resultItem.addEventListener('click', () => {
+                        searchBox.value = '';
+                        searchResults.classList.remove('active');
+                        filterBotsByCategory('all');
+                        openBotPopup(bot);
+                        incrementBotViews(bot);
+                    });
+                    searchResults.appendChild(resultItem);
+                });
+            } else {
+                searchResults.innerHTML = `
+                    <div class="result-item">
+                        <i class="fas fa-search"></i>
+                        <span>لا توجد نتائج للبحث</span>
+                    </div>
+                `;
+            }
+            
+            searchResults.classList.add('active');
+        }
+
+        // التبديل بين الوضع الداكن والفاتح
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'light';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+                themeStatus.textContent = 'الوضع الداكن';
+            } else {
+                document.body.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                themeStatus.textContent = 'الوضع الفاتح';
+            }
+        }
+
+        // التحقق من السمة المحفوظة
+        function checkTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+                themeSwitch.checked = true;
+                themeStatus.textContent = 'الوضع الفاتح';
+            }
+        }
+
+        // إضافة بوت جديد إلى Firebase
+        function addBotToFirebase(bot) {
+            const botsRef = database.ref('bots');
+            const newBotRef = botsRef.push();
+            newBotRef.set(bot)
+                .then(() => {
+                    showNotification('تم إضافة البوت بنجاح!', 'success');
+                    closeAddBotPopup();
+                })
+                .catch((error) => {
+                    showNotification('حدث خطأ أثناء إضافة البوت: ' + error.message, 'error');
+                });
+        }
+
+        // إرسال اقتراح بوت عبر بوت تلجرام
+        function sendSuggestionToTelegram(suggestion) {
+            const botToken = '7675035428:AAHL9FP30nJoG68u68lQGiOPehOjfVyp29w';
+            const chatId = '5012406813';
+            const message = `
+                اقتراح بوت جديد:
+                الاسم: ${suggestion.name}
+                الوصف: ${suggestion.description}
+                الرابط: ${suggestion.link}
+                الصورة: ${suggestion.image || 'غير محددة'}
+                المقدم من: ${currentUser}
+            `;
+            
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        showNotification('تم إرسال الاقتراح بنجاح! شكراً لك.', 'success');
+                        closeSuggestPopup();
+                    } else {
+                        showNotification('حدث خطأ أثناء إرسال الاقتراح. حاول مرة أخرى.', 'error');
                     }
                 })
                 .catch(error => {
-                    showError("حدث خطأ: " + error.message);
-                    statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
-                    console.error("تفاصيل الخطأ:", error);
+                    showNotification('حدث خطأ في الاتصال: ' + error.message, 'error');
                 });
         }
-        
-        // إظهار رسالة الخطأ
-        function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = "block";
+
+        // فتح نافذة إضافة بوت
+        function openAddBotPopup() {
+            addBotOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
-        
-        // إخفاء رسالة الخطأ
-        function hideError() {
-            errorDiv.style.display = "none";
+
+        // إغلاق نافذة إضافة بوت
+        function closeAddBotPopup() {
+            addBotOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            // مسح الحقول
+            document.getElementById('botNameInput').value = '';
+            document.getElementById('botDescriptionInput').value = '';
+            document.getElementById('botImageInput').value = '';
+            document.getElementById('botLinkInput').value = '';
+            document.getElementById('botCategoryInput').value = 'featured';
+            document.getElementById('botFeaturedInput').checked = false;
+            document.getElementById('botPopularInput').checked = false;
+            document.getElementById('botNewInput').checked = false;
         }
-        
-        // بدء أو إيقاف التسجيل
-        function toggleRecording() {
-            if (isRecording) {
-                recognition.stop();
+
+        // فتح نافذة اقتراح بوت
+        function openSuggestPopup() {
+            suggestOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // إغلاق نافذة اقتراح بوت
+        function closeSuggestPopup() {
+            suggestOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            // مسح الحقول
+            document.getElementById('suggestNameInput').value = '';
+            document.getElementById('suggestDescriptionInput').value = '';
+            document.getElementById('suggestLinkInput').value = '';
+            document.getElementById('suggestImageInput').value = '';
+        }
+
+        // مشاركة البوت
+        function shareBot(bot) {
+            if (navigator.share) {
+                navigator.share({
+                    title: bot.name,
+                    text: bot.description,
+                    url: bot.link
+                })
+                .then(() => showNotification('تمت المشاركة بنجاح', 'success'))
+                .catch((error) => showNotification('حدث خطأ أثناء المشاركة', 'error'));
             } else {
-                userText.textContent = "-";
-                hideError();
-                recognition.start();
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(bot.link)
+                    .then(() => showNotification('تم نسخ رابط البوت', 'success'))
+                    .catch(() => showNotification('تعذر نسخ الرابط', 'error'));
             }
         }
-        
-        // تهيئة التطبيق عند تحميل الصفحة
-        document.addEventListener("DOMContentLoaded", function() {
-            initSpeechRecognition();
-            
-            // إضافة مستمع الأحداث للزر
-            recordBtn.addEventListener("click", toggleRecording);
-            
-            // إضافة مستمع الأحداث للصوت
-            replyAudio.addEventListener('play', () => {
-                statusDiv.textContent = "جاري تشغيل الرد...";
+
+        // إعداد مستمعي الأحداث
+        function setupEventListeners() {
+            // تسجيل الدخول
+            loginBtn.addEventListener('click', () => {
+                const name = userNameInput.value.trim();
+                if (name) {
+                    currentUser = name;
+                    localStorage.setItem('telegramBotsUser', name);
+                    userName.textContent = name;
+                    settingsUserName.textContent = name;
+                    loginOverlay.style.display = 'none';
+                    
+                    // التحقق إذا كان المستخدم مطور
+                    isDeveloper = (name === 'adminh');
+                    if (isDeveloper) {
+                        addBotBtn.style.display = 'flex';
+                    }
+                }
             });
             
-            replyAudio.addEventListener('ended', () => {
-                statusDiv.textContent = "اكتمل التشغيل. انقر على الميكروفون للبدء مرة أخرى";
+            // تغيير المستخدم
+            changeUserBtn.addEventListener('click', () => {
+                localStorage.removeItem('telegramBotsUser');
+                currentUser = null;
+                isDeveloper = false;
+                addBotBtn.style.display = 'none';
+                loginOverlay.style.display = 'flex';
+                settingsPage.classList.remove('active');
             });
             
-            replyAudio.addEventListener('error', (e) => {
-                showError("حدث خطأ أثناء تشغيل الصوت");
-                statusDiv.textContent = "انقر على زر الميكروفون للمحاولة مرة أخرى";
+            // النافذة المنبثقة
+            closePopup.addEventListener('click', closeBotPopup);
+            openBotBtn.addEventListener('click', () => {
+                if (currentBot) {
+                    window.open(currentBot.link, '_blank');
+                }
             });
-        });
+            
+            shareBotBtn.addEventListener('click', () => {
+                if (currentBot) {
+                    shareBot(currentBot);
+                }
+            });
+            
+            deleteBotBtn.addEventListener('click', () => {
+                if (currentBot && confirm('هل أنت متأكد من حذف هذا البوت؟')) {
+                    deleteBot(currentBot);
+                }
+            });
+            
+            editBotBtn.addEventListener('click', () => {
+                if (currentBot) {
+                    openEditBotPopup(currentBot);
+                }
+            });
+            
+            // البحث
+            searchBox.addEventListener('input', (e) => {
+                searchBots(e.target.value);
+            });
+            
+            // الأقسام
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    filterBotsByCategory(button.dataset.category);
+                });
+            });
+            
+            categoryCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const category = card.dataset.category;
+                    filterBotsByCategory(category);
+                    categoriesPage.classList.remove('active');
+                    
+                    // تحديث الأزرار النشطة
+                    categoryButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.category === category) {
+                            btn.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // الإعدادات
+            settingsBtn.addEventListener('click', () => {
+                settingsPage.classList.add('active');
+            });
+            
+            backFromSettings.addEventListener('click', () => {
+                settingsPage.classList.remove('active');
+            });
+            
+            // الأقسام
+            categoriesBtn.addEventListener('click', () => {
+                categoriesPage.classList.add('active');
+            });
+            
+            backFromCategories.addEventListener('click', () => {
+                categoriesPage.classList.remove('active');
+            });
+            
+            // تبديل السمة
+            themeSwitch.addEventListener('change', toggleTheme);
+            
+            // تبديل الإشعارات
+            notificationsSwitch.addEventListener('change', function() {
+                notificationsStatus.textContent = this.checked ? 'مفعل' : 'معطل';
+            });
+            
+            // طريقة العرض
+            viewOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    viewOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    currentView = option.dataset.view;
+                    localStorage.setItem('viewType', currentView);
+                    applyViewType();
+                });
+            });
+            
+            // إغلاق النافذة المنبثقة بالنقر خارجها
+            popupOverlay.addEventListener('click', (e) => {
+                if (e.target === popupOverlay) {
+                    closeBotPopup();
+                }
+            });
+            
+            addBotOverlay.addEventListener('click', (e) => {
+                if (e.target === addBotOverlay) {
+                    closeAddBotPopup();
+                }
+            });
+            
+            editBotOverlay.addEventListener('click', (e) => {
+                if (e.target === editBotOverlay) {
+                    closeEditBotPopup();
+                }
+            });
+            
+            suggestOverlay.addEventListener('click', (e) => {
+                if (e.target === suggestOverlay) {
+                    closeSuggestPopup();
+                }
+            });
+            
+            // إضافة بوت
+            addBotBtn.addEventListener('click', openAddBotPopup);
+            cancelAddBotBtn.addEventListener('click', closeAddBotPopup);
+            submitBotBtn.addEventListener('click', () => {
+                const name = document.getElementById('botNameInput').value.trim();
+                const description = document.getElementById('botDescriptionInput').value.trim();
+                const image = document.getElementById('botImageInput').value.trim();
+                const link = document.getElementById('botLinkInput').value.trim();
+                const category = document.getElementById('botCategoryInput').value;
+                const featured = document.getElementById('botFeaturedInput').checked;
+                const popular = document.getElementById('botPopularInput').checked;
+                const isNew = document.getElementById('botNewInput').checked;
+                
+                if (name && description && image && link) {
+                    const newBot = {
+                        id: Date.now(), // استخدام الطابع الزمني كمعرف فريد
+                        name,
+                        description,
+                        image,
+                        link,
+                        category,
+                        views: 0,
+                        rating: 0,
+                        totalRatings: 0,
+                        addedBy: currentUser,
+                        featured,
+                        popular,
+                        new: isNew
+                    };
+                    
+                    addBotToFirebase(newBot);
+                } else {
+                    showNotification('يرجى ملء جميع الحقول', 'error');
+                }
+            });
+            
+            // تعديل بوت
+            updateBotBtn.addEventListener('click', updateBot);
+            cancelEditBotBtn.addEventListener('click', closeEditBotPopup);
+            
+            // اقتراح بوت
+            suggestBtn.addEventListener('click', openSuggestPopup);
+            suggestNavBtn.addEventListener('click', openSuggestPopup);
+            cancelSuggestBtn.addEventListener('click', closeSuggestPopup);
+            submitSuggestBtn.addEventListener('click', () => {
+                const name = document.getElementById('suggestNameInput').value.trim();
+                const description = document.getElementById('suggestDescriptionInput').value.trim();
+                const link = document.getElementById('suggestLinkInput').value.trim();
+                const image = document.getElementById('suggestImageInput').value.trim();
+                
+                if (name && description && link) {
+                    const suggestion = {
+                        name,
+                        description,
+                        link,
+                        image,
+                        suggestedBy: currentUser
+                    };
+                    
+                    sendSuggestionToTelegram(suggestion);
+                } else {
+                    showNotification('يرجى ملء الحقول الإلزامية (الاسم، الوصف، الرابط)', 'error');
+                }
+            });
+            
+            // الأزرار السفلية
+            homeBtn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                homeBtn.classList.add('active');
+                filterBotsByCategory('all');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            searchBtn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                searchBtn.classList.add('active');
+                searchBox.focus();
+            });
+            
+            // سلايدر البوتات
+            prevBotSlide.addEventListener('click', () => goToBotSlide(currentBotSlide - 1));
+            nextBotSlide.addEventListener('click', () => goToBotSlide(currentBotSlide + 1));
+            
+            // إيقاف المؤقت عند التمرير فوق السلايدر
+            botsSliderContainer.addEventListener('mouseenter', () => clearInterval(botSlideInterval));
+            botsSliderContainer.addEventListener('mouseleave', startBotsSlider);
+        }
+
+        // بدء التطبيق عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
